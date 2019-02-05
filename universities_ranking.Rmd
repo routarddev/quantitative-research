@@ -1,6 +1,6 @@
 ---
 title: "Metodologies de Recerca Quantitativa. PAC 2"
-author: "Sandra Marcos Bonet"
+author: "routarddev"
 date: "Gener 2019"
 output: 
   pdf_document:
