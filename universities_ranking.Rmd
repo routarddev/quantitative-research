@@ -1,0 +1,550 @@
+---
+title: "Metodologies de Recerca Quantitativa. PAC 2"
+author: "Sandra Marcos Bonet"
+date: "Gener 2019"
+output: 
+  pdf_document:
+    toc: TRUE
+    highlight: default
+    number_sections: true
+    toc_depth: 2
+  html_document:
+    highlight: default
+    number_sections: yes
+    #theme: cosmo
+    toc: TRUE
+    toc_depth: 2
+  word_document:
+    toc: TRUE
+    highlight: default
+    toc_depth: 2
+---
+
+******
+# Pre-processament de dades
+******
+
+******
+## Import file
+******
+
+Reprenem i seguim el treball realitzat a la PAC 1 sobre anàlisi multivariant.
+
+En primer lloc, carreguem llibreries necessàries: 
+
+```{r load_libraries, include=FALSE}
+library(readxl)
+library(ggplot2)
+library(psych)
+library(knitr)
+```
+
+Recuperem les dades a analitzar. En primer lloc, importem el fitxer que hem descarregat amb les dades seleccionades sobre les universitats espanyoles al recurs <a href="http://www.rankingcyd.org/rankingVA">Ranking CYD</a>
+
+```{r,eval=TRUE,echo=TRUE}
+getwd()
+universitats <- read_excel("universitats.xlsx")
+universitats
+```
+
+******
+## Taula d'equivalències
+******
+
+Un cop tenim les dades carregades, creem una taula d'equivalències i canviarem el nom de les columnes (levels) per estandaritzar la recerca.
+
+Taula d'equivalències:
+
+| Variables Originales | Nombres ajustados   |
+|----------------------|---------------------|
+| Universidad          | Universidad         |
+| Total grado          | TG_1617             |
+| Nuevos matriculados de grado | NMG_1516    |
+| Total máster         | TM_1617             |
+| Grado                | GG_1516             |
+| Máster               | GM_1516             |
+| Absoluto             | PA_1617             |
+| Extranjero           | PE_1617             |
+| Equivalente a tiempo completo | PETC_1617  |
+| Publicaciones        | TIP_1617            |
+| Grado1               | TIG_1617            |
+| Máster               | TIM_1617            |
+| Gasto total (2016)   | TIGT_2016           |
+
+De manera que, segons observem al recurs original del ranking d'universitats espanyoles, els valors corresponen a:
+
+* Estudiantes matriculados (2016 - 2017)
+    - Total grado (TG_1617)
+    - Nuevos matriculados (NMG_1516)
+    - Total máster (TM_1617)
+
+* Graduados (2015-2016)
+    - Grado (GG_1516)
+    - Máster (GM_1516)
+
+* Profesorado (2016-2017)
+    - Absoluto (PA_1617)
+    - Extranjero (PE_1617)
+
+* Publicaciones (TIP_1617)
+
+* Titulaciones impartidas
+    - Grado (TIG_1617)
+    - Máster (TIM_1617)
+
+* Gasto total (TIGT_2016)
+
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+colnames(universitats) <- c("Universidad", "TG_1617", "NMG_1516", "TM_1617", "GG_1516", "GM_1516", "PA_1617", "PE_1617", "PETC_1617", "TIP_1617", "TIG_1617", "TIM_1617", "TIGT_2016")
+colnames(universitats)
+universitats
+
+```
+
+******
+# Anàlisi univariant (PAC 1)
+******
+
+******
+## Objectius i hipòtesis (PAC 1)
+******
+
+Amb aquestes dades, els objectius que ens podem plantejar és revisar la qualitat de les dades i les seves relacions per tal d'organitzar la taula d'universitats segons les noves informacions que extraiem d'una anàlisi univariant. Per exemple, algunes de les classificacions que es podrien proposar són:
+
+* Ranking d'universitats per nombre d'estudiants
+* Ranking d'universitats per per taxa d'estudiants de grau 
+* Ranking d'universitats per taxa d'estudiants de màster
+* Rànking d'universitats per nombre de publicacions
+* Rànking d'estudiants per taxa de professors estrangers
+* Rànking d'universitats per nombre d'estudiants graduats el curs anterior
+* Rànking d'universitats per estudis oferts
+* Rànking d'universitats per despesa
+
+******
+## Analitzar la qualitat de les dades (PAC 1)
+******
+
+Amb especial atenció als següents punts:
+
+* Crear un diccionari de dades, destacant els camps clau, el tipus de cada variable, el seu format, domini.
+* Fer una anàlisi univariant de les variables, amb resultats numèrics i gràfics.
+* Detectar valors atípics.
+* Proposar transformacions sobre les variables que ho puguin necessitar.
+* Proposar la creació d'un mínim de quatre noves variables d'interès; per exemple, ràtios entre algunes de les variables de les que ja es disposen.
+
+Executem les següents comandes de R per obtenir aquesta informació:
+
+```{r,eval=TRUE,echo=TRUE}
+
+class(universitats)
+str(universitats)
+
+```
+
+Com podem observar, hem carregat el fitxer en una taula Data Frame anomenada universitats, que consta de 73 files, corresponents a 73 universitats espanyoles, i 13 variables, corresponents als diferents "levels" o etiquetes de la taula d'equivalències anterior.
+D'aquestes etiquetes, dues són de tipus caràcter ("Universidad" i "PETC_1617" que, de fet, té valors decimals), mentre que la resta són de tipus numèric.
+
+Si executem la següent comanda, obtindrem encara més informació sobre cada variable, amb valors estadístics bàsics:
+
+``` {r,eval=TRUE,echo=TRUE}
+# Basic statistical values for each parameter
+summary(universitats)
+```
+
+Observem que hi ha dues variables que obtenen valors estranys, definits com NA, que vol dir que hi ha algunes universitats de les quals no es disposa dades per aquests camps (estudiants de màster i graduats de màster) 
+
+D'aquesta manera, podem elaborar la següent taula:
+
+| Camps        | Tipus de dades |      Rang           | Valors estranys |
+|--------------|----------------|---------------------|-----------------|
+| Universidad  |  Caràcter      |||
+| TG_1617      |  Numèric       | [1067, 143834] ||
+| NMG_1516     |  Numèric       | [321, 48733] ||
+| TM_1617      |  Numèric       | [66.0, 10930.0] |   NA's (3) |
+| GG_1516      |  Numèric       | [112, 8358] ||
+| GM_1516      |  Numèric       | [36, 5212] |  NA's (4) |
+| PA_1617      |  Numèric       | [26, 5727] ||
+| PE_1617      |  Numèric       | [0.00, 188.00] ||
+| PETC_1617    |  Caràcter      | ||
+| TIP_1617     |  Numèric       | [4, 15901] ||
+| TIG_1617     |  Numèric       | [7.00, 70.00] ||
+| TIM_1617     |  Numèric       | [3.0, 279.0] ||
+| TIGT_2016    |  Numèric       | [14 , 510926590] ||
+
+
+Proposem una sèrie de transformacions i gràfics corresponents per tal obtenir resultats interessants:
+
+* Percentatge de professors foranis en relació al nombre total de professors:
+
+``` {r,eval=TRUE,echo=TRUE}
+universitats$ForeignPercentage <- universitats$PE_1617*100/universitats$PA_1617
+universitats[order(-universitats$ForeignPercentage),]
+```
+
+Observem que la IE Universidad té un nombre molt elevat de professors estrangers, en relació al total de professors que té, un 26,8%, seguida de la UPF, amb un 12% i de la universitat Abad Oliba CEU, amb un 10,63%.
+Vegem-ho gràficament amb aquest bar chart:
+
+<i>Nota: Cal instal·lar la llibreria ggplot2:</i>
+<i>install.packages("ggplot2")</i>
+
+``` {r,eval=TRUE,echo=TRUE}
+theme_set(theme_bw())
+
+ggplot(universitats, aes(x=universitats$Universidad, y=universitats$ForeignPercentage)) + 
+  geom_bar(stat="identity", width=0.9, fill="tomato3") +
+  labs(title="Universitats i Professors Estrangers", 
+       x="Universitats",
+       y="% Professors Estrangers") + 
+  theme(axis.text.x = element_text(angle=90, hjust=1))
+  
+```
+
+
+* Total d'estudis oferts i taxa d'estudis de grau i de màster
+
+``` {r,eval=TRUE,echo=TRUE}
+universitats$OfferedStudies <- universitats$TIG_1617 + universitats$TIM_1617
+universitats$BachelorStudiesPercentage <- universitats$TIG_1617*100/universitats$OfferedStudies
+universitats$MasterStudiesPercentage <- universitats$TIM_1617*100/universitats$OfferedStudies
+universitats[order(-universitats$OfferedStudies),]
+```
+
+
+``` {r,eval=TRUE,echo=TRUE}
+
+ggplot(universitats, aes(x=universitats$Universidad, y=universitats$OfferedStudies)) + 
+  geom_bar(stat="identity", width=0.9, fill="tomato3") +
+  labs(title="Universitats i Estudis Oferts", 
+       x="Universitats",
+       y="Nombre d'Estudis Oferts") + 
+  theme(axis.text.x = element_text(angle=90, hjust=1))
+  
+```
+
+
+* Total d'estudiants i taxa d'estudiants de grau i de màster
+
+``` {r,eval=TRUE,echo=TRUE}
+universitats$TotalStudents_1617 <- universitats$TG_1617 + universitats$TM_1617
+universitats$BachelorStudentsPercentage <- universitats$TG_1617*100/universitats$TotalStudents_1617
+universitats$MasterStudentsPercentage <- universitats$TM_1617*100/universitats$TotalStudents_1617
+universitats[order(-universitats$TotalStudents_1617),]
+```
+
+<i>Nota (en relació al warning): En alguns casos algunes universitats no tenen dades, per tant, no es veuran reflectides.</i>
+
+``` {r,eval=TRUE,echo=TRUE}
+
+ggplot(universitats, aes(x=universitats$Universidad, y=universitats$TotalStudents_1617)) + 
+  geom_bar(stat="identity", width=0.9, fill="tomato3") +
+  labs(title="Universitats i Nombre d'estudiants", 
+       x="Universitats",
+       y="% Nombre d'estudiants") + 
+  theme(axis.text.x = element_text(angle=90, hjust=1))
+  
+```
+
+<i>Nota (en relació al warning): En alguns casos algunes universitats no tenen dades, per tant, no es veuran reflectides.</i>
+
+``` {r,eval=TRUE,echo=TRUE}
+
+ggplot(universitats, aes(x=universitats$Universidad, y=universitats$BachelorStudentsPercentage)) + 
+  geom_bar(stat="identity", width=0.9, fill="tomato3") +
+  labs(title="Universitats i Estudiants de Grau", 
+       x="Universitats",
+       y="Estudiants de Grau") + 
+  theme(axis.text.x = element_text(angle=90, hjust=1))
+  
+```
+
+<i>Nota (en relació al warning): En alguns casos algunes universitats no tenen dades, per tant, no es veuran reflectides.</i>
+
+``` {r,eval=TRUE,echo=TRUE}
+ggplot(universitats, aes(x=universitats$Universidad, y=universitats$MasterStudentsPercentage)) + 
+  geom_bar(stat="identity", width=0.9, fill="tomato3") +
+  labs(title="Universitats i Estudiants de Màster", 
+       x="Universitats",
+       y="Estudiants de Màster") + 
+  theme(axis.text.x = element_text(angle=90, hjust=1))
+  
+```
+
+
+* Nombre de graduats (curs 2015 - 2016) i taxa de graduats de grau i de màster
+
+``` {r,eval=TRUE,echo=TRUE}
+universitats$TotalGraduates_1516 <- universitats$GG_1516 + universitats$GM_1516
+universitats$BachelorGraduatesPercentage <- universitats$GG_1516*100/universitats$TotalGraduates_1516
+universitats$MasterGraduatesPercentage <- universitats$GM_1516*100/universitats$TotalGraduates_1516
+universitats[order(-universitats$TotalGraduates_1516),]
+```
+
+<i>Nota (en relació al warning): En alguns casos algunes universitats no tenen dades, per tant, no es veuran reflectides.</i>
+
+``` {r,eval=TRUE,echo=TRUE}
+theme_set(theme_bw())
+
+ggplot(universitats, aes(x=universitats$Universidad, y=universitats$TotalGraduates_1516)) + 
+  geom_bar(stat="identity", width=0.9, fill="tomato3") +
+  labs(title="Universitats i Estudiants Graduats (15-16)", 
+       x="Universitats",
+       y="Estudiants Graduats") + 
+  theme(axis.text.x = element_text(angle=90, hjust=1))
+  
+```
+
+******
+## Observacions (PAC 1)
+******
+
+A través dels diferents càlculs i estudi de les dades relacionades amb les universitats, algunes de les quals (despesa universitària) són aportatades per les mateixes universitats, hem obtingut uns primers resultats interessants.
+
+Per una banda, hem obtingut els ranking d'universitats per percentatge de professors estrangers:
+
+``` {r,eval=TRUE,echo=TRUE}
+x <- universitats[order(-universitats$ForeignPercentage),]
+subset(x, select=c("Universidad", "ForeignPercentage"))
+```
+
+
+Per una banda, hem obtingut els ranking d'universitats per nombre d'estudis:
+
+``` {r,eval=TRUE,echo=TRUE}
+x <- universitats[order(-universitats$OfferedStudies),]
+subset(x, select=c("Universidad", "OfferedStudies"))
+```
+
+Per taxa d'estudiants de grau en relació al nombre d'estudis que ofereixen:
+
+``` {r,eval=TRUE,echo=TRUE}
+x <- universitats[order(-universitats$BachelorStudentsPercentage),]
+subset(x, select=c("Universidad", "BachelorStudentsPercentage"))
+```
+
+I per taxa de màster en relació al nombre d'estudis que ofereixen:
+
+``` {r,eval=TRUE,echo=TRUE}
+x <- universitats[order(-universitats$MasterStudentsPercentage),]
+subset(x, select=c("Universidad", "MasterStudentsPercentage"))
+```
+
+Ordenació per nombre de publicacions:
+
+``` {r,eval=TRUE,echo=TRUE}
+universitats[order(-universitats$TIP_1617),]
+ggplot(universitats, aes(x=universitats$Universidad, y=universitats$TIP_1617)) + 
+  geom_bar(stat="identity", width=0.9, fill="tomato3") + #tomato3 or deepskyblue4
+  labs(title="Ordered Bar Chart", 
+       subtitle="Universities Vs Publications", 
+       x="Universities",
+       y="Publications",
+       caption="source: mpg") + 
+  theme(axis.text.x = element_text(angle=90, hjust=1))
+```
+
+Entre altres ordenacions que podem obtenir. Ara bé, és important tenir en compte que aquests rankings poden ser enganyoses i donar peu a conclusions esbiaixades, ja que cal tenir en compte les relacions dels paràmetres que estem usant en comparació a altres universitats, és a dir, caldria tenir en compte diferents factors: nombre d'estudiants i despesa, nombre d'estudiants i publicacions, nombre d'estudiants i despesa, nombre de publicacions i professorat estranger, etc.
+
+******
+# Anàlisi multivariant
+******
+
+******
+## Disseny de l'estudi
+******
+
+Abans de fer un estudi sobre la relació de variables i començar a construir un model de regressió cal analitzar i entendre les variables per trobar-ne la correlació.
+Una manera senzilla de fer-ho és amb una anàlisi gràfica. Habitualment, per cada una de les variables independents (predictores), es visualitzen els següents gràfics:
+
+* <b>Scatter Plot</b>: per visualitzar la relació lineal entre el predictor i la resposta. 
+
+* <b>Box Plot</b>: per detectar qualsevol observació externa en la variable.
+
+* <b>Density Plot</b>: per veure la distribució de la variable predictora. Idealment, es prefereix una distribució propera a la normal (una corba amb forma de campana), sense esbiaixar-se cap a l'esquerra o la dreta.
+
+Per exemple, podem estudiar la relació entre les titulacions impartides i el professorat, el nombre d'estudiants matriculats i el professorat o bé el nombre de titulacions i la despesa total.
+
+Com que falten algunes dades, és a dir, algunes columnes estan buides (TM_1617, GM_1516 i TIGT_2016), són valors que poden modificar l'anàlisi. Per això, valorem dues opcions, assignar un valor de 0 a cada una d'aquestes columnes buides o bé assignar-hi la mitjana dels valors d'aquella columna. Optarem per aquesta segona opció per tal de tenir uns resultats menys dispersos.
+
+``` {r,eval=TRUE,echo=TRUE}
+# first we calculate the mean of the available data in these variables
+total_master.mean <- mean(universitats$TM_1617, na.rm=TRUE)
+universitats$TM_1617[is.na(universitats$TM_1617)] = total_master.mean
+total_master.mean
+
+master.mean <- mean(universitats$GM_1516, na.rm=TRUE)
+universitats$GM_1516[is.na(universitats$GM_1516)] = master.mean
+master.mean
+
+despesa.mean <- mean(universitats$TIGT_2016, na.rm=TRUE)
+universitats$TIGT_2016[is.na(universitats$TIGT_2016)] = despesa.mean
+despesa.mean
+```
+
+Un cop netejades les dades, dibuixarem un Scatter Plot entre variables per visualitzar la relació lineal entre les possibles variables explicatives i les possibles variables dependents.
+
+``` {r,eval=TRUE,echo=TRUE, Professors_Estudis}
+scatter.smooth(x=universitats$PA_1617, y=universitats$OfferedStudies, main="Professorat ~ Titulacions Impartides") #scatterplot
+```
+
+Mirem també una relació que pot resultar més evident, el nombre de professor en relació als estudis oferts per la universitat.
+
+``` {r,eval=TRUE,echo=TRUE, Professors_Estudiants}
+scatter.smooth(x=universitats$PA_1617, y=universitats$TotalStudents_1617, main="Professorat ~ Estudiants Matriculats")
+```
+
+Finalment, també ens podria interessar veure quina relació hi ha entre els estudis oferts i la despesa total.
+
+``` {r,eval=TRUE,echo=TRUE, Despesa_Titulacions}
+scatter.smooth(x=universitats$TIGT_2016, y=universitats$OfferedStudies, main="Despesa Total ~ Titulacions Impartides") #scatterplot
+```
+
+Observem que en els tres casos obtenim uns gràfics que ens mostren una relació força lineal. Per exemple, provem-ho en aquest darrer cas:
+
+``` {r,eval=TRUE,echo=TRUE, Correlation}
+cor(universitats$TIGT_2016, universitats$OfferedStudies)
+```
+
+Obtenim el valor de dependència lineal 0.8518248, que és molt proper a 1. Per tant, aquest valor ens indica un alta correlació directa, és a dir, que com més estudis oferts, més despesa total. Vegem-ho:
+
+``` {r,eval=TRUE,echo=TRUE, Linear_Regression}
+linearMod <- lm(universitats$OfferedStudies ~ universitats$TIGT_2016, data=universitats)
+print(linearMod)
+```
+             
+Per tant, podem expressar aquesta relació de variables amb la següent equació lineal:
+    estudis oferts = 2.735e+01 + 4.436e-07*despesa total
+
+Una altra hipòtesi que podria resultar temptadora és la de veure si el nombre publicacions d'una universitat està relacionada amb el nombre de professorat estranger. Si cerquem el valor de la correlació entre aquestes dues variables:
+
+``` {r,eval=TRUE,echo=TRUE}
+cor(universitats$ForeignPercentage, universitats$TIP_1617)
+```
+
+Obtenim un valor proper a zero. Els valors en un rang d'entre [-0.2, 0.2] impliquen una correlació molt baixa i, per tant, no expliquen suficientment la relació entre aquestes variables.
+
+Finalment, després de veure diferents possibles relacions i descartar-ne d'altres, prenem com a variable dependent el nombre de professorat (PA_1617) i com a variables explicatives o independents els estudis oferts (OfferedStudies), el nombre d'estudiants matriculats (TotalStudents_1617), les publicacions (TIP_1617) i la despesa total (TIGT_2016), entre altres.
+
+******
+## Anàlisi de conglomerats (clustering)
+******
+
+A continuació farem una anàlisi de clúster per tal d'agrupar les universitats que tenen característiques semblants. Es crearà el fitxer <b><i>dendrogram.pdf</i></b> amb els gràfics dels <b>clústers jeràrquics</b> corresponents al Mètode del Veí més Llunyà (<b>Complete Linkage Clustering</b>), el Mètode de Centre de Gravetat (<b>Centroid Linkage Clustering</b> o UPGMC) i el <b>Mètode de Ward</b>.
+
+Per això, primer calculem i arrodonim les distàncies i fem un resum de les variables del primer anàlisi de clúster:
+
+``` {r, eval=TRUE, echo=TRUE, Clustering_1}
+suppressWarnings(universitats.d <- dist(universitats))
+round(universitats.d)
+universitats.hc <- hclust(universitats.d)
+summary(universitats.hc)
+```
+
+Creem un fitxer PDF amb els clúster segons diferents mètodes, que seguidament mostrem:
+
+``` {r, eval=TRUE, echo=TRUE, Clustering_2}
+pdf(file="dendrogram.pdf", height=10, width=30)
+plot(universitats.hc, main = "Mètode del veí més llunyà", labels = universitats$Universidad)
+groups <- cutree(universitats.hc, k=3) # cut tree into 3 clusters
+# draw dendogram with red borders around the 3 clusters 
+rect.hclust(universitats.hc, k=3, border="red")
+
+s.hc2 <- hclust(universitats.d, method = "centroid")
+plot(s.hc2, main = "Mètode de centre de gravetat", labels = universitats$Universidad)
+
+s.hc3 <- hclust(universitats.d, method = "ward.D")
+plot(s.hc3, main = "Mètode de Ward", , labels = universitats$Universidad, cex=1)
+
+dev.off() # close pdf file
+
+# Show graphics in HTML report
+plot(universitats.hc, hang = -1, main = "Mètode del veí més llunyà", labels = universitats$Universidad, cex=0.5)
+groups <- cutree(universitats.hc, k=3) # cut tree into 3 clusters
+# draw dendogram with red borders around the 3 clusters 
+rect.hclust(universitats.hc, k=3, border="red")
+
+s.hc2 <- hclust(universitats.d, method = "centroid")
+plot(s.hc2, hang = -1, main = "Mètode de centre de gravetat", labels = universitats$Universidad, cex=0.5)
+groups <- cutree(s.hc2, k=2)
+rect.hclust(s.hc2, k=2, border="red")
+
+s.hc3 <- hclust(universitats.d, method = "ward.D")
+plot(s.hc3, hang = -1, main = "Mètode de Ward", labels = universitats$Universidad, cex=0.5)
+groups <- cutree(s.hc3, k=4)
+rect.hclust(s.hc3, k=4, border="red")
+
+```
+
+******
+## Anàlisi de regressió lineal múltiple
+******
+
+En aquest apartat, farem una anàlisi de regressió lineal múltiple per explicar la variable dependent escollida, nombre de professorat (PA_1617), a partir de les independents, els estudis oferts (OfferedStudies), el nombre d'estudiants matriculats (TotalStudents_1617), les publicacions (TIP_1617) i la despesa total (TIGT_2016), entre altres).
+
+Finalment, després de veure diferents possibles relacions i descartar-ne d'altres, prenem com a variable dependent el nombre de professorat (PA_1617) i com a variables explicatives o independents els estudis oferts (OfferedStudies), el nombre d'estudiants matriculats (TotalStudents_1617), les publicacions (TIP_1617) i la despesa total (TIGT_2016), entre altres.
+
+``` {r eval=TRUE, echo=TRUE, regression}
+#regressor = lm(formula = universitats$TotalStudents_1617 ~ ., data = universitats)
+regressor = lm(formula = universitats$PA_1617 ~ universitats$OfferedStudies + universitats$TotalStudents_1617 + universitats$TIP_1617 + universitats$TIGT_2016, data = universitats)
+regressor
+```
+
+Per tant, podem expressar aquesta relació de variables amb la següent equació lineal per a la regressió múltiple:
+    
+    PA_1617 = 2.469e+01 + 2.949e+00*OfferedStudies + 2.549e-04*TotalStudents_1617 * 9.300e-02*TIP_1617 + 6.655e-06*TIGT_2016
+    
+És a dir:
+
+    professorat = 2.469e+01 + 2.949e+00*estudis oferts + 2.549e-04*Nombre d'estudiants + 9.300e-02*nombre de publicacions + 6.655e-06*despesa total
+
+Seguidament obtenim una previsió de valors per a la funció lineal creada amb els resultats anteriors:
+
+``` {r eval=TRUE, echo=TRUE, predict_values}
+y_pred = predict(regressor, labels = as.vector(universitats['Universidad']))
+y_pred
+#plot(universitats$Universidad, y_pred, pch = 16, xlab = "Universitat", ylab = "Predicció")
+```
+
+
+******
+# Conclusions
+******
+En aquesta segona pràctica hem revisat com carregar dades d'un fitxer i processar-les adequadament pels seu posterior treball i anàlisis.
+
+Hem realitzat una anàlisi de regressió lineal amb algunes de les variables inicials i altres d'obtingudes, prenent com a variable dependent el nombre de professors per a cada universitat (PA_1617) i com a variables independents o explicatives els estudis oferts (OfferedStudies), el nombre d’estudiants matriculats (TotalStudents_1617), les publicacions (TIP_1617) i la despesa total (TIGT_2016).
+
+Seguidament, hem fet una anàlisi de clústers per agrupar les universitats amb característiques semblants. Per a l'anàlisi del mètode del veí més llunyà, hem vist que es crea un arbre de sis nivells jeràrquics amb 3 clústers principals:
+
+``` {r eval=TRUE, echo=TRUE, cluster_grouping}
+#svg(width=50)
+plot(universitats.hc, main = "Mètode del veí més llunyà", labels = universitats$Universidad, cex=0.5)
+groups <- cutree(universitats.hc, k=3) # cut tree into 3 clusters
+# draw dendogram with red borders around the 3 clusters 
+rect.hclust(universitats.hc, k=3, border="red")
+#dev.off()
+```
+
+Per al mètode de centre de gravetat hem trobat 2 clústers principals, mentre que pel mètode de Ward, són 4 els clústers principals. Per a cada un d'aquests clúster i les seves agrupacions es pot realitzar una anàlisi per veure les similutds del seus nodes (universitats) en funció de l'algoritme o mètode elegit.
+
+Finalment, hem fet una anàlisi de regressió múltiple amb les variables dependent i independents seleccionades en la primera part, obtenint una equació de dependència mitjançant la qual podem predir els valors per a cada universitat.
+
+******
+# Referències
+******
+
+<ul>
+  <li>http://r-statistics.co/Linear-Regression.html</li>
+  <li>https://tutorials.iq.harvard.edu/R/Rstatistics/Rstatistics.html
+</li>
+  <li>https://www.statmethods.net/stats/regression.html
+</li>
+  <li>http://girke.bioinformatics.ucr.edu/GEN242/pages/mydoc/Rclustering.html
+</li>
+  <li>https://www.geeksforgeeks.org/multiple-linear-regression-using-r/</li>
+  <li><a href="https://rstudio-pubs-static.s3.amazonaws.com/73936_a22f365dbd584bbf883ed60c540ac736.html">Dealing with NAs in your dataset (R)</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Ward%27s_method">Hierarchical Cluster Analysis: Ward Method</a></li>
+  <li><a href="https://www.stat.berkeley.edu/~spector/s133/Clus.html">Performing and Interpreting Cluster Analysis</a></li>
+</ul>
+<br/>
