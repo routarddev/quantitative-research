@@ -1,0 +1,2 @@
+# Reclassify `.Rmd` (R markdown) files as R:
+*.Rmd linguist-language=R
